@@ -62,7 +62,7 @@ mod tests {
     #[test]
     fn part1() {
         assert_eq!(super::part1(&super::transform_input(INPUT)), 2);
-        // assert_eq!(super::part1(&read_input()), 1765812);
+        assert_eq!(super::part1(&super::transform_input(&read_input())), 371);
     }
 
     #[test]
