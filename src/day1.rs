@@ -29,6 +29,8 @@ pub fn part2(input: &(Vec<usize>, Vec<usize>)) -> usize {
 
 #[cfg(test)]
 mod tests {
+    use std::io::Read;
+
     const INPUT: &str = "3   4
 4   3
 2   5
@@ -39,5 +41,10 @@ mod tests {
     #[test]
     fn part1() {
         assert_eq!(super::part1(&super::transform_input(INPUT)), 11);
+        let mut input = String::new();
+        let _ = std::fs::File::open("input\\2024\\day1.txt")
+            .unwrap()
+            .read_to_string(&mut input);
+        assert_eq!(super::part1(&super::transform_input(&input)), 1765812);
     }
 }
