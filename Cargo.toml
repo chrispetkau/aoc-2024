@@ -11,3 +11,5 @@ rust-crypto = "0.2.*"
 aoc-runner = "0.3.*"
 aoc-runner-derive = "0.3.*"
 regex = "1.11.*"
+aoc-util = { path = "c:/src/aoc-util", version = "*" }
+enum-iterator = "2.1.*"
