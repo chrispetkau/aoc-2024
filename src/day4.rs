@@ -1,4 +1,4 @@
-use aoc_util::grid::{direction::Direction, Grid};
+use aoc_util::grid::{direction::Direction, vector::Vector, Grid};
 use enum_iterator::all;
 
 type Cell = char;
@@ -37,7 +37,43 @@ pub fn part1(input: &Grid<Cell>) -> usize {
 
 #[aoc(day4, part2)]
 pub fn part2(input: &Grid<Cell>) -> usize {
-    0
+    input
+        .coords()
+        .filter(|coord| input[&coord] == 'A')
+        .filter_map(|coord| {
+            let Ok(ne) = input
+                .offset_coord(&coord, &Vector::from(Direction::Northeast))
+                .map(|coord| input[&coord])
+            else {
+                return None;
+            };
+            let Ok(nw) = input
+                .offset_coord(&coord, &Vector::from(Direction::Northwest))
+                .map(|coord| input[&coord])
+            else {
+                return None;
+            };
+            let Ok(se) = input
+                .offset_coord(&coord, &Vector::from(Direction::Southeast))
+                .map(|coord| input[&coord])
+            else {
+                return None;
+            };
+            let Ok(sw) = input
+                .offset_coord(&coord, &Vector::from(Direction::Southwest))
+                .map(|coord| input[&coord])
+            else {
+                return None;
+            };
+            Some((ne, nw, se, sw))
+        })
+        .filter(|(ne, nw, se, sw)| {
+            ((*ne == *se && *nw == *sw)
+                && ((*ne == 'M' && *nw == 'S') || (*ne == 'S' && *nw == 'M')))
+                || ((*ne == *nw && *se == *sw)
+                    && ((*ne == 'M' && *se == 'S') || (*ne == 'S' && *se == 'M')))
+        })
+        .count()
 }
 
 #[cfg(test)]
@@ -71,7 +107,7 @@ MXMXAXMASX";
 
     #[test]
     fn part2() {
-        assert_eq!(super::part2(&super::transform_input(INPUT)), 18);
-        // assert_eq!(super::part2(&read_input()), 88811886);
+        assert_eq!(super::part2(&super::transform_input(INPUT)), 9);
+        assert_eq!(super::part2(&super::transform_input(&read_input())), 1866);
     }
 }
