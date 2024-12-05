@@ -24,9 +24,9 @@ pub fn part1(input: &Grid<Cell>) -> usize {
                     .filter(|direction| {
                         if let Ok(ray) = input.ray_from_index(i, *direction) {
                             let mut candidate = ray.skip(1).take(3);
-                            candidate.next().filter(|m| **m == 'M').is_some()
-                                && candidate.next().filter(|a| **a == 'A').is_some()
-                                && candidate.next().filter(|s| **s == 'S').is_some()
+                            candidate.next().is_some_and(|m| *m == 'M')
+                                && candidate.next().is_some_and(|a| *a == 'A')
+                                && candidate.next().is_some_and(|s| *s == 'S')
                         } else {
                             false
                         }
@@ -70,7 +70,7 @@ MXMXAXMASX";
     #[test]
     fn part1() {
         assert_eq!(super::part1(&super::transform_input(INPUT)), 18);
-        // assert_eq!(super::part1(&read_input()), 166357705);
+        // assert_eq!(super::part1(&read_input()), 2536);
     }
 
     #[test]
