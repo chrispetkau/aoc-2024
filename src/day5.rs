@@ -1,4 +1,7 @@
-use std::collections::{HashMap, HashSet};
+use std::{
+    cmp::Ordering,
+    collections::{HashMap, HashSet},
+};
 
 type PageNumber = usize;
 
@@ -6,15 +9,17 @@ type Update = Vec<PageNumber>;
 
 #[derive(Debug)]
 pub struct Input {
-    /// Associate with each page number a set of page numbers that must precede it.
     page_ordering_rules: HashMap<PageNumber, HashSet<PageNumber>>,
-    updates: Vec<Update>,
+    ordered: Vec<Update>,
+    not_ordered: Vec<Update>,
 }
 
 #[aoc_generator(day5)]
 pub fn transform_input(input: &str) -> Input {
+    // Associate with each page number a set of page numbers that must precede it.
     let mut page_ordering_rules: HashMap<PageNumber, HashSet<PageNumber>> = HashMap::new();
-    let mut updates = vec![];
+    let mut ordered = vec![];
+    let mut not_ordered = vec![];
     let mut section = 0;
     for line in input.lines() {
         if line.is_empty() {
@@ -29,48 +34,68 @@ pub fn transform_input(input: &str) -> Input {
                 page_ordering_rules.entry(b).or_default().insert(a);
             }
             1 => {
-                updates.push(
-                    line.split(',')
-                        .map(|page_number| page_number.parse::<usize>().unwrap())
-                        .collect::<Vec<_>>(),
-                );
+                let update = line
+                    .split(',')
+                    .map(|page_number| page_number.parse::<usize>().unwrap())
+                    .collect::<Vec<_>>();
+                let mut is_ordered = true;
+                for i in 0..update.len() - 1 {
+                    let Some(predecessors) = page_ordering_rules.get(&update[i]) else {
+                        continue;
+                    };
+                    if update
+                        .iter()
+                        .skip(i)
+                        .any(|successor| predecessors.contains(successor))
+                    {
+                        is_ordered = false;
+                        break;
+                    }
+                }
+                if is_ordered {
+                    ordered.push(update);
+                } else {
+                    not_ordered.push(update);
+                }
             }
             _ => unreachable!(),
         }
     }
     Input {
         page_ordering_rules,
-        updates,
+        ordered,
+        not_ordered,
     }
 }
 
 #[aoc(day5, part1)]
 pub fn part1(input: &Input) -> usize {
     input
-        .updates
+        .ordered
         .iter()
-        .filter(|update| {
-            for i in 0..update.len() - 1 {
-                let Some(predecessors) = input.page_ordering_rules.get(&update[i]) else {
-                    continue;
-                };
-                if update
-                    .iter()
-                    .skip(i)
-                    .any(|successor| predecessors.contains(successor))
-                {
-                    return false;
-                }
-            }
-            true
-        })
-        .map(|ordered_update| ordered_update[ordered_update.len() / 2])
+        .map(|update| update[update.len() / 2])
         .sum::<usize>()
 }
 
 #[aoc(day5, part2)]
 pub fn part2(input: &Input) -> usize {
-    0
+    input
+        .not_ordered
+        .iter()
+        .cloned()
+        .map(|mut update| {
+            update.sort_by(|a, b| {
+                let Some(predecessors) = input.page_ordering_rules.get(a) else {
+                    return Ordering::Less;
+                };
+                predecessors
+                    .contains(b)
+                    .then_some(Ordering::Greater)
+                    .unwrap_or(Ordering::Less)
+            });
+            update[update.len() / 2]
+        })
+        .sum::<usize>()
 }
 
 #[cfg(test)]
@@ -122,7 +147,7 @@ mod tests {
 
     #[test]
     fn part2() {
-        assert_eq!(super::part2(&super::transform_input(INPUT)), 9);
-        // assert_eq!(super::part2(&super::transform_input(&read_input())), 1866);
+        assert_eq!(super::part2(&super::transform_input(INPUT)), 123);
+        assert_eq!(super::part2(&super::transform_input(&read_input())), 4655);
     }
 }
