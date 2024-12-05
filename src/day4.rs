@@ -17,19 +17,15 @@ pub fn transform_input(input: &str) -> Grid<Cell> {
 pub fn part1(input: &Grid<Cell>) -> usize {
     // Iterate through all cells. For each 'X' found, travel in each of 8 cardinal directions looking for 'MAS'.
     input
-        .indices()
-        .map(|i| {
-            if input.cells()[i] == 'X' {
+        .coords()
+        .map(|coord| {
+            if input[&coord] == 'X' {
                 all::<Direction>()
                     .filter(|direction| {
-                        if let Ok(ray) = input.ray_from_index(i, *direction) {
-                            let mut candidate = ray.skip(1).take(3);
-                            candidate.next().is_some_and(|m| *m == 'M')
-                                && candidate.next().is_some_and(|a| *a == 'A')
-                                && candidate.next().is_some_and(|s| *s == 'S')
-                        } else {
-                            false
-                        }
+                        let mut candidate = input.ray(coord.clone(), *direction).skip(1).take(3);
+                        candidate.next().is_some_and(|m| *m == 'M')
+                            && candidate.next().is_some_and(|a| *a == 'A')
+                            && candidate.next().is_some_and(|s| *s == 'S')
                     })
                     .count()
             } else {
@@ -70,7 +66,7 @@ MXMXAXMASX";
     #[test]
     fn part1() {
         assert_eq!(super::part1(&super::transform_input(INPUT)), 18);
-        // assert_eq!(super::part1(&read_input()), 2536);
+        assert_eq!(super::part1(&super::transform_input(&read_input())), 2534);
     }
 
     #[test]
