@@ -22,10 +22,14 @@ pub fn part1(input: &Grid<Cell>) -> usize {
             if input[&coord] == 'X' {
                 all::<Direction>()
                     .filter(|direction| {
-                        let mut candidate = input.ray(coord.clone(), *direction).skip(1).take(3);
-                        candidate.next().is_some_and(|m| *m == 'M')
-                            && candidate.next().is_some_and(|a| *a == 'A')
-                            && candidate.next().is_some_and(|s| *s == 'S')
+                        let mut candidate = input
+                            .ray(coord.clone(), *direction)
+                            .skip(1)
+                            .take(3)
+                            .map(|(cell, _)| *cell);
+                        candidate.next().is_some_and(|m| m == 'M')
+                            && candidate.next().is_some_and(|a| a == 'A')
+                            && candidate.next().is_some_and(|s| s == 'S')
                     })
                     .count()
             } else {
