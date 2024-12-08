@@ -58,12 +58,12 @@ fn visit(coord: &Coord, direction: Direction, visited: &mut Grid<u8>) -> bool {
     prev != *visit
 }
 
-#[aoc(day6, part1)]
-pub fn part1(input: &Input) -> usize {
+fn simulate(input: &Input) -> (Grid<u8>, bool) {
     let mut visited_cells = Vec::with_capacity(input.grid.cells().len());
     visited_cells.resize(input.grid.cells().len(), 0);
     let mut visited = Grid::new(input.grid.width(), visited_cells);
     let mut guard = input.guard.clone();
+    let mut trapped = false;
     loop {
         let ray = input.grid.ray(guard.position.clone(), guard.direction);
         let mut blocked = false;
@@ -73,6 +73,7 @@ pub fn part1(input: &Input) -> usize {
                 break;
             }
             if !visit(&coord, guard.direction, &mut visited) {
+                trapped = true;
                 break;
             }
             guard.position = coord;
@@ -83,12 +84,31 @@ pub fn part1(input: &Input) -> usize {
         let new_direction = guard.direction.rotate(Rotation::Clockwise90Degrees);
         guard.direction = new_direction;
     }
+    (visited, trapped)
+}
+
+#[aoc(day6, part1)]
+pub fn part1(input: &Input) -> usize {
+    let (visited, _) = simulate(input);
     visited.cells().iter().filter(|visit| **visit != 0).count()
 }
 
 #[aoc(day6, part2)]
 pub fn part2(input: &Input) -> usize {
-    0
+    let mut scratch = input.clone();
+    let start_index = input.grid.index(&input.guard.position).unwrap();
+    input
+        .grid
+        .indices()
+        .filter(|i| *i != start_index)
+        .filter(|i| !input.grid.cells()[*i])
+        .filter(|i| {
+            scratch.grid.cells_mut()[*i] = true;
+            let (_, trapped) = simulate(&scratch);
+            scratch.grid.cells_mut()[*i] = false;
+            trapped
+        })
+        .count()
 }
 
 #[cfg(test)]
@@ -122,7 +142,7 @@ mod tests {
 
     #[test]
     fn part2() {
-        assert_eq!(super::part2(&super::transform_input(INPUT)), 123);
-        // assert_eq!(super::part2(&super::transform_input(&read_input())), 4655);
+        assert_eq!(super::part2(&super::transform_input(INPUT)), 6);
+        assert_eq!(super::part2(&super::transform_input(&read_input())), 1618);
     }
 }
