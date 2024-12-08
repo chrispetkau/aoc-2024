@@ -1,37 +1,27 @@
+use enum_iterator::{all, Sequence};
 use std::{num::ParseIntError, str::FromStr};
 
-#[derive(Clone, Debug)]
-enum Op {
-    Add,
-    Multiply,
-}
-
-impl Op {
-    fn apply(&self, a: usize, b: usize) -> usize {
-        match *self {
-            Op::Add => a + b,
-            Op::Multiply => a * b,
-        }
-    }
-}
-
-type Permutation = Vec<Op>; // a sequence of ops
-type PermutationTier = Vec<Permutation>; // all permutations of a specific length i.e. a tier
-
-fn generate_permutations(length: usize) -> Vec<PermutationTier> {
-    let mut permutations = vec![vec![], vec![vec![Op::Add], vec![Op::Multiply]]];
+fn generate_permutations<T>(length: usize, elements: Vec<T>) -> Vec<Vec<Vec<T>>>
+where
+    T: Sized + Copy,
+{
+    let tier_1_permutations = elements
+        .iter()
+        .map(|element| vec![*element])
+        .collect::<Vec<_>>();
+    let mut permutations = vec![vec![], tier_1_permutations];
     for i in 2..length {
-        let adds = permutations[i - 1].iter().map(|s| {
-            let mut adds = s.clone();
-            adds.push(Op::Add);
-            adds
-        });
-        let multiplies = permutations[i - 1].iter().map(|s| {
-            let mut multiplies = s.clone();
-            multiplies.push(Op::Multiply);
-            multiplies
-        });
-        permutations.push(Vec::from_iter(adds.chain(multiplies)));
+        let new_permutations = permutations[i - 1]
+            .iter()
+            .flat_map(|previous_permutation| {
+                elements.iter().map(|element| {
+                    let mut new_permutation = previous_permutation.clone();
+                    new_permutation.push(*element);
+                    new_permutation
+                })
+            })
+            .collect::<Vec<_>>();
+        permutations.push(new_permutations);
     }
     permutations
 }
@@ -58,7 +48,10 @@ impl FromStr for Equation {
 }
 
 impl Equation {
-    fn is_solvable(&self, permutations: &Vec<Permutation>) -> bool {
+    fn is_solvable<T>(&self, permutations: &Vec<Vec<T>>) -> bool
+    where
+        T: Op,
+    {
         let init = self.terms[0];
         permutations.iter().any(|permutation| {
             let mut op = permutation.iter();
@@ -71,10 +64,7 @@ impl Equation {
 }
 
 #[derive(Clone, Debug)]
-pub struct Input {
-    equations: Vec<Equation>,
-    permutations: Vec<PermutationTier>,
-}
+pub struct Input(Vec<Equation>);
 
 #[aoc_generator(day7)]
 pub fn transform_input(input: &str) -> Input {
@@ -83,34 +73,82 @@ pub fn transform_input(input: &str) -> Input {
         .map(|line| line.parse::<Equation>())
         .collect::<Result<Vec<_>, _>>()
         .unwrap();
-    let max_term_count = equations
-        .iter()
-        .map(|equation| equation.terms.len())
-        .max()
-        .unwrap();
-    let permutations = generate_permutations(max_term_count);
-    Input {
-        equations,
-        permutations,
+    Input(equations)
+}
+
+trait Op {
+    fn apply(&self, a: usize, b: usize) -> usize;
+}
+
+#[derive(Clone, Debug, PartialEq, PartialOrd, Copy, Eq, Sequence)]
+enum Part1Op {
+    Add,
+    Multiply,
+}
+
+impl Op for Part1Op {
+    fn apply(&self, a: usize, b: usize) -> usize {
+        match *self {
+            Part1Op::Add => a + b,
+            Part1Op::Multiply => a * b,
+        }
     }
 }
 
 #[aoc(day7, part1)]
 pub fn part1(input: &Input) -> usize {
+    let max_term_count = input
+        .0
+        .iter()
+        .map(|equation| equation.terms.len())
+        .max()
+        .unwrap();
+    let permutations = generate_permutations(max_term_count, all::<Part1Op>().collect::<Vec<_>>());
     input
-        .equations
+        .0
         .iter()
         .filter_map(|equation| {
             equation
-                .is_solvable(&input.permutations[equation.terms.len() - 1])
+                .is_solvable(&permutations[equation.terms.len() - 1])
                 .then_some(equation.solution)
         })
         .sum::<usize>()
 }
 
+#[derive(Clone, Debug, PartialEq, PartialOrd, Copy, Eq, Sequence)]
+enum Part2Op {
+    Add,
+    Multiply,
+    Concatenate,
+}
+
+impl Op for Part2Op {
+    fn apply(&self, a: usize, b: usize) -> usize {
+        match *self {
+            Part2Op::Add => a + b,
+            Part2Op::Multiply => a * b,
+            Part2Op::Concatenate => format!("{a}{b}").parse::<usize>().unwrap(),
+        }
+    }
+}
 #[aoc(day7, part2)]
 pub fn part2(input: &Input) -> usize {
-    0
+    let max_term_count = input
+        .0
+        .iter()
+        .map(|equation| equation.terms.len())
+        .max()
+        .unwrap();
+    let permutations = generate_permutations(max_term_count, all::<Part2Op>().collect::<Vec<_>>());
+    input
+        .0
+        .iter()
+        .filter_map(|equation| {
+            equation
+                .is_solvable(&permutations[equation.terms.len() - 1])
+                .then_some(equation.solution)
+        })
+        .sum::<usize>()
 }
 
 #[cfg(test)]
@@ -138,12 +176,15 @@ mod tests {
     #[test]
     fn part1() {
         assert_eq!(super::part1(&super::transform_input(INPUT)), 3749);
-        assert_eq!(super::part1(&super::transform_input(&read_input())), 1399219271639);
+        assert_eq!(
+            super::part1(&super::transform_input(&read_input())),
+            1399219271639
+        );
     }
 
     #[test]
     fn part2() {
-        assert_eq!(super::part2(&super::transform_input(INPUT)), 6);
-        // assert_eq!(super::part2(&super::transform_input(&read_input())), 1618);
+        assert_eq!(super::part2(&super::transform_input(INPUT)), 11387);
+        assert_eq!(super::part2(&super::transform_input(&read_input())), 275791737999003);
     }
 }
