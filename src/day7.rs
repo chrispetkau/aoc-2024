@@ -185,6 +185,9 @@ mod tests {
     #[test]
     fn part2() {
         assert_eq!(super::part2(&super::transform_input(INPUT)), 11387);
-        assert_eq!(super::part2(&super::transform_input(&read_input())), 275791737999003);
+        assert_eq!(
+            super::part2(&super::transform_input(&read_input())),
+            275791737999003
+        );
     }
 }

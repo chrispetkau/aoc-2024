@@ -1,7 +1,7 @@
 use aoc_util::grid::coord::Coord;
 use std::collections::{HashMap, HashSet};
 
-struct Input {
+pub struct Input {
     antennas: HashMap<char, Vec<Coord>>,
     width: usize,
     height: usize,
@@ -37,20 +37,19 @@ pub fn part1(input: &Input) -> usize {
     input.antennas.iter().for_each(|(_, locations)| {
         for i in 0..locations.len() {
             let a = &locations[i];
-            for j in i + 1..locations.len() {
-                let b = &locations[j];
+            locations.iter().skip(i + 1).for_each(|b| {
                 let delta = b - a;
-                if let Some(antinode) = a - delta.clone() {
+                if let Some(antinode) = a - &delta {
                     if antinode.x < input.width && antinode.y < input.height {
                         antinodes.insert(antinode);
                     }
                 }
-                if let Some(antinode) = b + delta {
+                if let Some(antinode) = b + &delta {
                     if antinode.x < input.width && antinode.y < input.height {
                         antinodes.insert(antinode);
                     }
                 }
-            }
+            });
         }
     });
     antinodes.len()
@@ -58,7 +57,38 @@ pub fn part1(input: &Input) -> usize {
 
 #[aoc(day8, part2)]
 pub fn part2(input: &Input) -> usize {
-    0
+    let mut antinodes = HashSet::new();
+    input.antennas.iter().for_each(|(_, locations)| {
+        for i in 0..locations.len() {
+            let a = &locations[i];
+            locations.iter().skip(i + 1).for_each(|b| {
+                antinodes.insert(a.clone());
+                antinodes.insert(b.clone());
+                let step = b - a;
+                let mut delta = step.clone();
+                loop {
+                    let mut done = true;
+                    if let Some(antinode) = a - &delta {
+                        if antinode.x < input.width && antinode.y < input.height {
+                            antinodes.insert(antinode);
+                            done = false;
+                        }
+                    }
+                    if let Some(antinode) = b + &delta {
+                        if antinode.x < input.width && antinode.y < input.height {
+                            antinodes.insert(antinode);
+                            done = false;
+                        }
+                    }
+                    if done {
+                        break;
+                    }
+                    delta += &step;
+                }
+            });
+        }
+    });
+    antinodes.len()
 }
 
 #[cfg(test)]
@@ -94,7 +124,7 @@ mod tests {
 
     #[test]
     fn part2() {
-        assert_eq!(super::part2(&super::transform_input(INPUT)), 9);
-        // assert_eq!(super::part2(&super::transform_input(&read_input())), 1866);
+        assert_eq!(super::part2(&super::transform_input(INPUT)), 34);
+        assert_eq!(super::part2(&super::transform_input(&read_input())), 884);
     }
 }

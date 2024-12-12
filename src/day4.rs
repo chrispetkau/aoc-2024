@@ -45,30 +45,18 @@ pub fn part2(input: &Grid<Cell>) -> usize {
         .coords()
         .filter(|coord| input[&coord] == 'A')
         .filter_map(|coord| {
-            let Ok(ne) = input
+            let ne = input
                 .offset_coord(&coord, &Vector::from(Direction::Northeast))
-                .map(|coord| input[&coord])
-            else {
-                return None;
-            };
-            let Ok(nw) = input
+                .map(|coord| input[&coord])?;
+            let nw = input
                 .offset_coord(&coord, &Vector::from(Direction::Northwest))
-                .map(|coord| input[&coord])
-            else {
-                return None;
-            };
-            let Ok(se) = input
+                .map(|coord| input[&coord])?;
+            let se = input
                 .offset_coord(&coord, &Vector::from(Direction::Southeast))
-                .map(|coord| input[&coord])
-            else {
-                return None;
-            };
-            let Ok(sw) = input
+                .map(|coord| input[&coord])?;
+            let sw = input
                 .offset_coord(&coord, &Vector::from(Direction::Southwest))
-                .map(|coord| input[&coord])
-            else {
-                return None;
-            };
+                .map(|coord| input[&coord])?;
             Some((ne, nw, se, sw))
         })
         .filter(|(ne, nw, se, sw)| {
