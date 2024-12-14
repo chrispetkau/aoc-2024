@@ -88,10 +88,11 @@ pub fn part2(input: &Input) -> usize {
                 let Some(predecessors) = input.page_ordering_rules.get(a) else {
                     return Ordering::Less;
                 };
-                predecessors
-                    .contains(b)
-                    .then_some(Ordering::Greater)
-                    .unwrap_or(Ordering::Less)
+                if predecessors.contains(b) {
+                    Ordering::Greater
+                } else {
+                    Ordering::Less
+                }
             });
             update[update.len() / 2]
         })
